@@ -1,5 +1,7 @@
 package me.pablete1234.gamocord.command;
 
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageChannel;
 
 import java.lang.reflect.InvocationTargetException;
@@ -51,7 +53,7 @@ public class CommandHandler {
         MessageChannel channel = context.channel;
 
         CommandWrapper command = registeredCommands.get(cmd[0]);
-        if (command == null) {
+        if (command == null || !isAllowed(command.cmd, context.member)) {
             reply(channel, "Unknown command `" + cmd[0] + "`, use `help` to list available commands");
             return true;
         }
@@ -59,7 +61,7 @@ public class CommandHandler {
         try {
             reply(channel, command.run(context, cmd.length == 1 ? new String[]{} : cmd[1].split(" ")));
         } catch (BadUsageException e) {
-            reply(channel,"Bad command usage: `" + command.cmd.usage() + "`");
+            reply(channel, "Bad command usage: `" + command.cmd.usage() + "`");
         } catch (IllegalArgumentException e) {
             reply(channel, "Bad argument: " + e.getMessage());
         } catch (Exception e) {
@@ -102,6 +104,11 @@ public class CommandHandler {
         }
     }
 
+    public static boolean isAllowed(Command cmd, Member member) {
+        return !cmd.admin() ||
+                (member != null && member.hasPermission(Permission.ADMINISTRATOR));
+    }
+
     private class HelpCommand {
         @Command(
                 value = "help",
@@ -111,7 +118,9 @@ public class CommandHandler {
         public String help(CommandContext context, String[] args) {
             if (args.length != 0) throw new BadUsageException();
 
-            return "Available commands: \n" + registeredCommands.values().stream().map(cwrap -> cwrap.cmd)
+            return "Available commands: \n" + registeredCommands.values().stream()
+                    .map(cwrap -> cwrap.cmd)
+                    .filter(c -> isAllowed(c, context.member))
                     .map(c -> " - `" + c.value() + "` - Usage: `." + c.usage() + "` - " + c.description())
                     .collect(Collectors.joining("\n"));
         }

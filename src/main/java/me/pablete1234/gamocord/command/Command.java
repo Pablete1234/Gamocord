@@ -8,4 +8,5 @@ public @interface Command {
     String value();
     String usage();
     String description();
+    boolean admin() default false;
 }

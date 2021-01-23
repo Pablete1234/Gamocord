@@ -8,13 +8,9 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Properties;
 
 public class Main extends ListenerAdapter {
-
-    private static final String CONFIG_FILE = "config.properties";
 
     public static void main(String[] args) throws Exception {
         new Main();
@@ -24,13 +20,12 @@ public class Main extends ListenerAdapter {
     private final CommandHandler cmdHandler;
 
     public Main() throws IOException, LoginException {
-        Properties props = new Properties();
-        props.load(new FileInputStream(CONFIG_FILE));
+        this.configuration = new Configuration();
 
-        this.configuration =  new Configuration(props);
         this.cmdHandler = new CommandHandler(
                 configuration.getPrefixes(),
-                new ServerCommands(configuration)
+                new ServerCommands(configuration),
+                new AdminCommands(configuration)
         );
 
         JDABuilder.createLight(configuration.getDiscordToken())
@@ -42,7 +37,12 @@ public class Main extends ListenerAdapter {
 
     @Override
     public void onGuildMessageReceived(@Nonnull GuildMessageReceivedEvent event) {
-        this.cmdHandler.dispatchCommand(new CommandContext(event.getAuthor(), event.getChannel(), event.getMessage()));
+        this.cmdHandler.dispatchCommand(new CommandContext(
+                event.getAuthor(),
+                event.getChannel(),
+                event.getMessage(),
+                event.getGuild(),
+                event.getMember()));
     }
 
 }

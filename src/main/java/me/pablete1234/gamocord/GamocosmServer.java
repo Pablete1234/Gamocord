@@ -9,14 +9,20 @@ import java.net.http.HttpResponse;
 public class GamocosmServer {
 
     private static final String API_URL = "https://gamocosm.com/servers/{server_id}/api/{api_key}/";
+    private final String name;
     private final String serverId;
     private final String apiKey;
     private final HttpClient client;
 
-    public GamocosmServer(String serverId, String apiKey) {
+    public GamocosmServer(String name, String serverId, String apiKey) {
+        this.name = name;
         this.serverId = serverId;
         this.apiKey = apiKey;
         this.client = HttpClient.newHttpClient();
+    }
+
+    public String getName() {
+        return name;
     }
 
     private URI getURI(String endpoint) {

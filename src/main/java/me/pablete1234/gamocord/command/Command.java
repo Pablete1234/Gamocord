@@ -9,4 +9,5 @@ public @interface Command {
     String usage();
     String description();
     boolean admin() default false;
+    boolean master() default false;
 }

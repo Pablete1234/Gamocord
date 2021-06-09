@@ -19,7 +19,7 @@ public class AdminCommands {
         this.configuration = configuration;
     }
 
-    @Command(value = "reload", usage = "reload", description = "Reloads server mappings from config file", admin = true)
+    @Command(value = "reload", usage = "reload", description = "Reloads server mappings from config file", admin = true, master = true)
     public String status(CommandContext context, String[] args) {
         try {
             configuration.loadProps();
@@ -30,7 +30,7 @@ public class AdminCommands {
         return "Successfully reloaded servers (`" + configuration.getServers().size() + "`)";
     }
 
-    @Command(value = "save", usage = "save", description = "Saves mappings to config file", admin = true)
+    @Command(value = "save", usage = "save", description = "Saves mappings to config file", admin = true, master = true)
     public String save(CommandContext context, String[] args) {
         try {
             configuration.saveProps();
@@ -42,9 +42,10 @@ public class AdminCommands {
 
     @Command(value = "list", usage = "list", description = "Lists all available servers & mappings", admin = true)
     public String list(CommandContext context, String[] args) {
-        return "Available servers `" + configuration.getServers().size() + "`: \n" +
-                configuration.getServers()
-                .entrySet().stream()
+        Map<String, GamocosmServer> servers = getServers(context);
+
+        return "Available servers `" + servers.size() + "`: \n" +
+                servers.entrySet().stream()
                 .map(e -> format(e.getValue().getName(), e.getKey(), context.guild))
                 .collect(Collectors.joining("\n"));
     }
@@ -53,7 +54,9 @@ public class AdminCommands {
     public String move(CommandContext context, String[] args) {
         if (args.length != 2 || context.guild == null) throw new BadUsageException();
 
-        Map.Entry<String, GamocosmServer> server = configuration.getServers().entrySet().stream()
+        Map<String, GamocosmServer> servers = getServers(context);
+
+        Map.Entry<String, GamocosmServer> server = servers.entrySet().stream()
                 .filter(e -> e.getValue().getName().equalsIgnoreCase(args[0]))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Couldn't find server: " + args[0]));
@@ -75,6 +78,13 @@ public class AdminCommands {
                 "Remember to `save` if you want to save them to config";
     }
 
+    private Map<String, GamocosmServer> getServers(CommandContext context) {
+        if (isMasterGuild(context.guild)) return configuration.getServers();
+        return configuration.getServers().entrySet().stream()
+                .filter(e -> context.guild != null && context.guild.getGuildChannelById(e.getKey()) != null)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
     private static String format(String name, String channelId, @Nullable Guild guild) {
         GuildChannel ch = guild == null ? null : guild.getGuildChannelById(channelId);
         return "`" + name + "`: " + getChannelName(ch) + " (`" + channelId + "`)";
@@ -84,6 +94,11 @@ public class AdminCommands {
         if (ch == null) return "*unknown*";
         if (ch instanceof IMentionable) return ((IMentionable) ch).getAsMention();
         return "#" + ch.getName();
+    }
+
+    private boolean isMasterGuild(Guild guild) {
+        return guild != null &&
+                (configuration.getMasterGuildId() == null || configuration.getMasterGuildId().equals(guild.getId()));
     }
 
 }

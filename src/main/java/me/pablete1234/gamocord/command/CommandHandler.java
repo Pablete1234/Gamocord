@@ -15,15 +15,17 @@ public class CommandHandler {
     private static final String DEFAULT_COMMAND_SYMBOLS = ".-/!";
 
     private final String prefixes;
+    private final String masterGuildId;
 
     private final Map<String, CommandWrapper> registeredCommands = new LinkedHashMap<>();
 
     public CommandHandler(Object... handlers) {
-        this(DEFAULT_COMMAND_SYMBOLS, handlers);
+        this(DEFAULT_COMMAND_SYMBOLS, null, handlers);
     }
 
-    public CommandHandler(String prefixes, Object... handlers) {
+    public CommandHandler(String prefixes, String masterGuildId, Object... handlers) {
         this.prefixes = prefixes;
+        this.masterGuildId = masterGuildId;
         registerCommands(new HelpCommand());
         for (Object handler : handlers) {
             registerCommands(handler);
@@ -104,9 +106,10 @@ public class CommandHandler {
         }
     }
 
-    public static boolean isAllowed(Command cmd, Member member) {
+    public boolean isAllowed(Command cmd, Member member) {
         return !cmd.admin() ||
-                (member != null && member.hasPermission(Permission.ADMINISTRATOR));
+                (member != null && member.hasPermission(Permission.ADMINISTRATOR) &&
+                        (!cmd.master() || masterGuildId == null || member.getGuild().getId().equals(masterGuildId)));
     }
 
     private class HelpCommand {

@@ -22,6 +22,7 @@ public class Configuration {
     private final String discordToken;
     private final Activity activity;
     private final String prefixes;
+    private final String masterGuildId;
     private final Map<String, GamocosmServer> links = new HashMap<>();
 
     public Configuration() throws IOException {
@@ -33,6 +34,9 @@ public class Configuration {
                 props.getProperty("activity.text"));
 
         this.prefixes = props.getProperty("prefixes");
+
+        String master = props.getProperty("master.guild-id");
+        this.masterGuildId = master == null || master.isEmpty() ? null : master;
 
         rebuildLinks();
     }
@@ -65,6 +69,10 @@ public class Configuration {
 
     public String getPrefixes() {
         return prefixes;
+    }
+
+    public String getMasterGuildId() {
+        return masterGuildId;
     }
 
     public GamocosmServer getAPI(String channelId) {

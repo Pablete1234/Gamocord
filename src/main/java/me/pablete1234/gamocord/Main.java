@@ -24,6 +24,7 @@ public class Main extends ListenerAdapter {
 
         this.cmdHandler = new CommandHandler(
                 configuration.getPrefixes(),
+                configuration.getMasterGuildId(),
                 new ServerCommands(configuration),
                 new AdminCommands(configuration)
         );
